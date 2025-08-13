@@ -1,12 +1,9 @@
 # ------------------------------------------------------------------------------
 # ステップ1: 必要なライブラリのインストールとインポート
 # ------------------------------------------------------------------------------
-# !pip install selenium Pillow requests  <- VPSで直接インストールするため、この行は不要
-# !apt-get update                        <- VPSで直接実行するため、この行は不要
-# !apt-get install -y chromium-chromedriver <- VPSで直接実行するため、この行は不要
-
 import time
-import requests # ★★★ Discord通知のために追加 ★★★
+import requests
+from datetime import datetime # ★★★ 日付取得のために追加 ★★★
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -21,6 +18,7 @@ chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--headless')
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--disable-dev-shm-usage')
+chrome_options.add_argument('--disable-gpu') # エラー回避のため追加済み
 driver = webdriver.Chrome(options=chrome_options)
 print("WebDriverの準備ができました。")
 
@@ -30,7 +28,7 @@ print("WebDriverの準備ができました。")
 url = 'https://www.coinglass.com/FundingRateHeatMap'
 full_screenshot_filename = 'heatmap_full.png'
 cropped_filename = 'heatmap_cropped.png'
-webhook_url = 'https://discord.com/api/webhooks/1405093792683524146/shLGuhQhKQuHh5NFKwgkIx41OM1z7EtGOQMBRe8Wo81AfXbvY5vK6Ev9QkSr2LY74RcV' # ★★★ Webhook URLを変数に ★★★
+webhook_url = 'https://discord.com/api/webhooks/1405093792683524146/shLGuhQhKQuHh5NFKwgkIx41OM1z7EtGOQMBRe8Wo81AfXbvY5vK6Ev9QkSr2LY74RcV'
 
 try:
     print(f"'{url}' にアクセスしています...")
@@ -89,9 +87,15 @@ try:
     # ★★★ ステップ4: Discordへの通知 ★★★
     # --------------------------------------------------------------------------
     print("Discordに画像を送信しています...")
+
+    # ★★★ 現在の日付を取得して、"YYYY年MM月DD日"の形式にフォーマット ★★★
+    today_str = datetime.now().strftime('%Y年%m月%d日')
+    message = f'{today_str} のFunding Rate Heatmapです。'
+
     with open(cropped_filename, 'rb') as f:
         files = {'file': (cropped_filename, f, 'image/png')}
-        payload = {'content': '毎朝のFunding Rate Heatmapです。'}
+        # ★★★ 日付入りのメッセージに変更 ★★★
+        payload = {'content': message}
         response = requests.post(webhook_url, data=payload, files=files)
         if response.status_code == 200 or response.status_code == 204:
             print("Discordへの画像送信に成功しました。")
